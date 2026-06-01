@@ -113,11 +113,30 @@ Either Vercel or Netlify works. **Vercel** is the simplest:
 2. Go to [vercel.com](https://vercel.com), "Add New Project", import the repo.
 3. Framework preset: **Vite**. Build command `npm run build`, output dir `dist`
    (Vercel detects these automatically).
-4. Add the two environment variables (same as your `.env`):
+4. Add the environment variables (Settings → Environment Variables):
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `CALENDAR_ICAL_URL` — your Google Calendar secret iCal URL (see below).
+     **No `VITE_` prefix**, so it stays server-side only.
 5. Deploy. Copy the resulting URL into Supabase's Redirect URLs / Site URL (see
    the login section above).
+
+## Schedule tab (Google Calendar)
+
+The **Schedule** tab shows your Google Calendar (read-only) — no tasks. The
+browser can't fetch Google's `.ics` directly (CORS), so a serverless function at
+[`api/calendar.js`](./api/calendar.js) fetches and parses it server-side
+(expanding recurring events) and returns JSON to the app.
+
+Get your feed URL from **Google Calendar → Settings → your calendar →
+"Secret address in iCal format"** (ends in `/basic.ics`). Then set it as the
+**`CALENDAR_ICAL_URL`** environment variable in Vercel (Settings → Environment
+Variables). It is read only on the server and never sent to the browser or
+committed to the repo. Google's feed can lag a few hours — the Schedule tab has a
+manual refresh button.
+
+> Locally, the calendar only works under `vercel dev` (plain `npm run dev` doesn't
+> run the `/api` function). The board and tasks work fine under `npm run dev`.
 
 ---
 

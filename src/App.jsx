@@ -4,7 +4,7 @@ import { useFlowData } from './hooks/useFlowData'
 import Auth from './components/Auth'
 import Board from './components/Board'
 import BoardSwitcher from './components/BoardSwitcher'
-import CalendarView from './components/CalendarView'
+import ScheduleView from './components/ScheduleView'
 import EditSheet from './components/EditSheet'
 import ColumnSheet from './components/ColumnSheet'
 import BoardSheet from './components/BoardSheet'
@@ -136,7 +136,7 @@ function FlowApp({ session }) {
         </div>
       </header>
 
-      {!loading && !error && boards.length > 0 && (
+      {view === 'board' && !loading && !error && boards.length > 0 && (
         <BoardSwitcher
           boards={boards}
           selectedId={selectedBoardId}
@@ -146,7 +146,9 @@ function FlowApp({ session }) {
         />
       )}
 
-      {error ? (
+      {view === 'schedule' ? (
+        <ScheduleView />
+      ) : error ? (
         <div className="center-state">
           <div className="big">Couldn’t load your boards</div>
           <div>{error}</div>
@@ -155,7 +157,7 @@ function FlowApp({ session }) {
         <div className="center-state">
           <div className="spinner" />
         </div>
-      ) : view === 'board' ? (
+      ) : (
         <>
           <Board
             columns={visibleColumns}
@@ -168,12 +170,6 @@ function FlowApp({ session }) {
           />
           <div className="hint">Tap a card to edit · press &amp; hold to drag · swipe for more</div>
         </>
-      ) : (
-        <CalendarView
-          tasks={visibleTasks}
-          columns={visibleColumns}
-          onCardClick={(task) => setTaskEditing({ mode: 'edit', task })}
-        />
       )}
 
       <EditSheet
