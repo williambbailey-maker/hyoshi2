@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabase'
 import { useFlowData } from './hooks/useFlowData'
 import Auth from './components/Auth'
 import Board from './components/Board'
+import BoardSwitcher from './components/BoardSwitcher'
 import CalendarView from './components/CalendarView'
 import EditSheet from './components/EditSheet'
 import ColumnSheet from './components/ColumnSheet'
+import BoardSheet from './components/BoardSheet'
 import AccountSheet from './components/AccountSheet'
 
 export default function App() {
@@ -41,10 +43,17 @@ export default function App() {
 function FlowApp({ session }) {
   const userId = session.user.id
   const {
+    boards,
     columns,
     tasks,
+    selectedBoardId,
+    setSelectedBoardId,
     loading,
     error,
+    addBoard,
+    updateBoard,
+    deleteBoard,
+    moveBoard,
     addColumn,
     updateColumn,
     deleteColumn,
@@ -58,21 +67,42 @@ function FlowApp({ session }) {
   const [view, setView] = useState('board') // 'board' | 'schedule'
   const [taskEditing, setTaskEditing] = useState(null)
   const [colEditing, setColEditing] = useState(null)
+  const [boardEditing, setBoardEditing] = useState(null)
   const [accountOpen, setAccountOpen] = useState(false)
+
+  // Scope everything to the currently selected board.
+  const visibleColumns = useMemo(
+    () => columns.filter((c) => c.board_id === selectedBoardId),
+    [columns, selectedBoardId],
+  )
+  const visibleTasks = useMemo(() => {
+    const ids = new Set(visibleColumns.map((c) => c.id))
+    return tasks.filter((t) => ids.has(t.column_id))
+  }, [tasks, visibleColumns])
 
   const email = session.user.email || ''
   const initials = email.slice(0, 2).toUpperCase()
-  const doneCount = (() => {
-    const doneCol = columns.find((c) => /done/i.test(c.title))
-    return doneCol ? tasks.filter((t) => t.column_id === doneCol.id).length : 0
-  })()
+  const doneCount = useMemo(() => {
+    const doneCol = visibleColumns.find((c) => /done/i.test(c.title))
+    return doneCol ? visibleTasks.filter((t) => t.column_id === doneCol.id).length : 0
+  }, [visibleColumns, visibleTasks])
 
   function openColumnMenu(column) {
-    const ordered = [...columns].sort((a, b) => a.position - b.position)
+    const ordered = visibleColumns.slice().sort((a, b) => a.position - b.position)
     setColEditing({
       mode: 'edit',
       column,
       index: ordered.findIndex((c) => c.id === column.id),
+      total: ordered.length,
+    })
+  }
+
+  function openBoardMenu(board) {
+    const ordered = boards.slice().sort((a, b) => a.position - b.position)
+    setBoardEditing({
+      mode: 'edit',
+      board,
+      index: ordered.findIndex((b) => b.id === board.id),
       total: ordered.length,
     })
   }
@@ -85,15 +115,12 @@ function FlowApp({ session }) {
           <p>
             {loading
               ? 'Loading…'
-              : `${tasks.length} task${tasks.length === 1 ? '' : 's'} · ${doneCount} done`}
+              : `${visibleTasks.length} task${visibleTasks.length === 1 ? '' : 's'} · ${doneCount} done`}
           </p>
         </div>
         <div className="header-right">
           <div className="segmented">
-            <button
-              className={view === 'board' ? 'active' : ''}
-              onClick={() => setView('board')}
-            >
+            <button className={view === 'board' ? 'active' : ''} onClick={() => setView('board')}>
               Board
             </button>
             <button
@@ -109,9 +136,19 @@ function FlowApp({ session }) {
         </div>
       </header>
 
+      {!loading && !error && boards.length > 0 && (
+        <BoardSwitcher
+          boards={boards}
+          selectedId={selectedBoardId}
+          onSelect={setSelectedBoardId}
+          onEdit={openBoardMenu}
+          onAdd={() => setBoardEditing({ mode: 'new' })}
+        />
+      )}
+
       {error ? (
         <div className="center-state">
-          <div className="big">Couldn’t load your board</div>
+          <div className="big">Couldn’t load your boards</div>
           <div>{error}</div>
         </div>
       ) : loading ? (
@@ -121,8 +158,8 @@ function FlowApp({ session }) {
       ) : view === 'board' ? (
         <>
           <Board
-            columns={columns}
-            tasks={tasks}
+            columns={visibleColumns}
+            tasks={visibleTasks}
             onReorder={reorderTasks}
             onAddTask={(columnId) => setTaskEditing({ mode: 'new', columnId })}
             onCardClick={(task) => setTaskEditing({ mode: 'edit', task })}
@@ -133,8 +170,8 @@ function FlowApp({ session }) {
         </>
       ) : (
         <CalendarView
-          tasks={tasks}
-          columns={columns}
+          tasks={visibleTasks}
+          columns={visibleColumns}
           onCardClick={(task) => setTaskEditing({ mode: 'edit', task })}
         />
       )}
@@ -150,10 +187,19 @@ function FlowApp({ session }) {
       <ColumnSheet
         editing={colEditing}
         onClose={() => setColEditing(null)}
-        onCreate={addColumn}
+        onCreate={(title, color) => addColumn(selectedBoardId, title, color)}
         onUpdate={updateColumn}
         onDelete={deleteColumn}
         onMove={moveColumn}
+      />
+
+      <BoardSheet
+        editing={boardEditing}
+        onClose={() => setBoardEditing(null)}
+        onCreate={addBoard}
+        onUpdate={updateBoard}
+        onDelete={deleteBoard}
+        onMove={moveBoard}
       />
 
       <AccountSheet open={accountOpen} onClose={() => setAccountOpen(false)} email={email} />

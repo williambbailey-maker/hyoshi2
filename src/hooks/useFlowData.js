@@ -7,54 +7,100 @@ const STARTER_COLUMNS = [
   { title: 'Done', color: '#5ad1cd', position: 2 },
 ]
 
-// Central data layer for the board: loads columns + tasks, keeps them in
-// sync across devices via Supabase realtime, and exposes all mutations.
+// Module-level lock: if two loads race on a brand-new account, they share the
+// same seeding promise instead of both creating a default board/columns.
+let seedLock = null
+
+// Central data layer: loads boards + columns + tasks, keeps them synced across
+// devices via realtime, tracks the selected board, and exposes all mutations.
 export function useFlowData(userId) {
+  const [boards, setBoards] = useState([])
   const [columns, setColumns] = useState([])
   const [tasks, setTasks] = useState([])
+  const [selectedBoardId, setSelectedBoardIdState] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const seedingRef = useRef(false)
+
+  const selectedRef = useRef(null)
+  selectedRef.current = selectedBoardId
+
+  const storageKey = userId ? `flow.selectedBoard.${userId}` : null
+
+  const setSelectedBoardId = useCallback(
+    (id) => {
+      setSelectedBoardIdState(id)
+      if (storageKey && id) localStorage.setItem(storageKey, id)
+    },
+    [storageKey],
+  )
+
+  const seedStarterColumns = useCallback(
+    async (boardId) => {
+      await supabase
+        .from('columns')
+        .insert(STARTER_COLUMNS.map((c) => ({ ...c, board_id: boardId, user_id: userId })))
+    },
+    [userId],
+  )
 
   const load = useCallback(async () => {
     if (!userId) return
     setError(null)
+
+    let boardRes = await supabase.from('boards').select('*').order('position', { ascending: true })
+    if (boardRes.error) {
+      setError(boardRes.error.message)
+      setLoading(false)
+      return
+    }
+    let boardData = boardRes.data || []
+
+    // First-time user: create a default board + starter columns (race-safe).
+    if (boardData.length === 0) {
+      if (!seedLock) {
+        seedLock = (async () => {
+          const { data: board } = await supabase
+            .from('boards')
+            .insert({ title: 'My Board', position: 0, color: '#7c6cff', user_id: userId })
+            .select()
+            .single()
+          if (board) await seedStarterColumns(board.id)
+        })()
+      }
+      await seedLock
+      seedLock = null
+      boardRes = await supabase.from('boards').select('*').order('position', { ascending: true })
+      boardData = boardRes.data || []
+    }
+
     const [colRes, taskRes] = await Promise.all([
       supabase.from('columns').select('*').order('position', { ascending: true }),
       supabase.from('tasks').select('*').order('position', { ascending: true }),
     ])
 
-    if (colRes.error) {
-      setError(colRes.error.message)
-      setLoading(false)
-      return
-    }
-
-    let cols = colRes.data || []
-
-    // First-time user: create the three starter columns.
-    if (cols.length === 0 && !seedingRef.current) {
-      seedingRef.current = true
-      const { data: seeded, error: seedErr } = await supabase
-        .from('columns')
-        .insert(STARTER_COLUMNS.map((c) => ({ ...c, user_id: userId })))
-        .select()
-      seedingRef.current = false
-      if (!seedErr && seeded) cols = seeded.sort((a, b) => a.position - b.position)
-    }
-
-    setColumns(cols)
+    setBoards(boardData)
+    setColumns(colRes.data || [])
     setTasks(taskRes.data || [])
+
+    // Pick the selected board: keep current if still valid, else the stored
+    // one, else the first board.
+    const ids = boardData.map((b) => b.id)
+    let next = selectedRef.current
+    if (!next || !ids.includes(next)) {
+      const stored = storageKey ? localStorage.getItem(storageKey) : null
+      next = stored && ids.includes(stored) ? stored : boardData[0]?.id || null
+    }
+    setSelectedBoardId(next)
+
     setLoading(false)
-  }, [userId])
+  }, [userId, seedStarterColumns, storageKey, setSelectedBoardId])
 
   useEffect(() => {
     setLoading(true)
     load()
   }, [load])
 
-  // Realtime: when anything changes (including a "dump" from Claude on another
-  // device), refetch so this device stays current.
+  // Realtime: refetch when boards / columns / tasks change anywhere.
   useEffect(() => {
     if (!userId) return
     let timer
@@ -64,6 +110,7 @@ export function useFlowData(userId) {
     }
     const channel = supabase
       .channel('flow-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'boards' }, refetch)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'columns' }, refetch)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, refetch)
       .subscribe()
@@ -73,18 +120,71 @@ export function useFlowData(userId) {
     }
   }, [userId, load])
 
-  // ---- column operations ----
-  const addColumn = useCallback(
+  // ---- board operations ----
+  const addBoard = useCallback(
     async (title, color) => {
-      const position = columns.length
+      const position = boards.length
+      const { data: board } = await supabase
+        .from('boards')
+        .insert({ title, color, position, user_id: userId })
+        .select()
+        .single()
+      if (board) {
+        await seedStarterColumns(board.id)
+        setSelectedBoardId(board.id)
+        await load()
+      }
+    },
+    [boards.length, userId, seedStarterColumns, setSelectedBoardId, load],
+  )
+
+  const updateBoard = useCallback(async (id, fields) => {
+    setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, ...fields } : b)))
+    await supabase.from('boards').update(fields).eq('id', id)
+  }, [])
+
+  const deleteBoard = useCallback(
+    async (id) => {
+      // Columns (and their tasks) are removed via ON DELETE CASCADE.
+      const remaining = boards.filter((b) => b.id !== id)
+      const removedColumnIds = new Set(columns.filter((c) => c.board_id === id).map((c) => c.id))
+      setBoards(remaining)
+      setColumns((prev) => prev.filter((c) => c.board_id !== id))
+      setTasks((prev) => prev.filter((t) => !removedColumnIds.has(t.column_id)))
+      if (selectedRef.current === id) setSelectedBoardId(remaining[0]?.id || null)
+      await supabase.from('boards').delete().eq('id', id)
+    },
+    [boards, columns, setSelectedBoardId],
+  )
+
+  const moveBoard = useCallback(
+    async (id, direction) => {
+      const ordered = [...boards].sort((a, b) => a.position - b.position)
+      const idx = ordered.findIndex((b) => b.id === id)
+      const swapWith = idx + direction
+      if (swapWith < 0 || swapWith >= ordered.length) return
+      ;[ordered[idx], ordered[swapWith]] = [ordered[swapWith], ordered[idx]]
+      const renumbered = ordered.map((b, i) => ({ ...b, position: i }))
+      setBoards(renumbered)
+      await Promise.all(
+        renumbered.map((b) => supabase.from('boards').update({ position: b.position }).eq('id', b.id)),
+      )
+    },
+    [boards],
+  )
+
+  // ---- column operations (scoped to a board) ----
+  const addColumn = useCallback(
+    async (boardId, title, color) => {
+      const position = columns.filter((c) => c.board_id === boardId).length
       const { data } = await supabase
         .from('columns')
-        .insert({ title, color, position, user_id: userId })
+        .insert({ title, color, position, board_id: boardId, user_id: userId })
         .select()
         .single()
       if (data) setColumns((prev) => [...prev, data])
     },
-    [columns.length, userId],
+    [columns, userId],
   )
 
   const updateColumn = useCallback(async (id, fields) => {
@@ -93,7 +193,6 @@ export function useFlowData(userId) {
   }, [])
 
   const deleteColumn = useCallback(async (id) => {
-    // Tasks are removed automatically via ON DELETE CASCADE.
     setColumns((prev) => prev.filter((c) => c.id !== id))
     setTasks((prev) => prev.filter((t) => t.column_id !== id))
     await supabase.from('columns').delete().eq('id', id)
@@ -101,17 +200,22 @@ export function useFlowData(userId) {
 
   const moveColumn = useCallback(
     async (id, direction) => {
-      const ordered = [...columns].sort((a, b) => a.position - b.position)
+      const col = columns.find((c) => c.id === id)
+      if (!col) return
+      const ordered = columns
+        .filter((c) => c.board_id === col.board_id)
+        .sort((a, b) => a.position - b.position)
       const idx = ordered.findIndex((c) => c.id === id)
       const swapWith = idx + direction
       if (swapWith < 0 || swapWith >= ordered.length) return
       ;[ordered[idx], ordered[swapWith]] = [ordered[swapWith], ordered[idx]]
       const renumbered = ordered.map((c, i) => ({ ...c, position: i }))
-      setColumns(renumbered)
+      const patch = new Map(renumbered.map((c) => [c.id, c.position]))
+      setColumns((prev) =>
+        prev.map((c) => (patch.has(c.id) ? { ...c, position: patch.get(c.id) } : c)),
+      )
       await Promise.all(
-        renumbered.map((c) =>
-          supabase.from('columns').update({ position: c.position }).eq('id', c.id),
-        ),
+        renumbered.map((c) => supabase.from('columns').update({ position: c.position }).eq('id', c.id)),
       )
     },
     [columns],
@@ -172,11 +276,18 @@ export function useFlowData(userId) {
   )
 
   return {
+    boards,
     columns,
     tasks,
+    selectedBoardId,
+    setSelectedBoardId,
     loading,
     error,
     reload: load,
+    addBoard,
+    updateBoard,
+    deleteBoard,
+    moveBoard,
     addColumn,
     updateColumn,
     deleteColumn,

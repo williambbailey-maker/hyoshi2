@@ -7,9 +7,19 @@
 -- Tables
 -- ============================================================
 
+create table if not exists public.boards (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  title text not null,
+  position integer not null,
+  color text,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.columns (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  board_id uuid not null references public.boards(id) on delete cascade,
   title text not null,
   position integer not null,
   color text,
@@ -32,6 +42,8 @@ create table if not exists public.tasks (
 create index if not exists tasks_column_id_idx on public.tasks(column_id);
 create index if not exists tasks_user_id_idx on public.tasks(user_id);
 create index if not exists columns_user_id_idx on public.columns(user_id);
+create index if not exists columns_board_id_idx on public.columns(board_id);
+create index if not exists boards_user_id_idx on public.boards(user_id);
 
 -- ============================================================
 -- Keep tasks.updated_at fresh on every update
@@ -58,8 +70,18 @@ create trigger tasks_set_updated_at
 -- Row Level Security: a user can only read/write their own rows
 -- ============================================================
 
+alter table public.boards enable row level security;
 alter table public.columns enable row level security;
 alter table public.tasks enable row level security;
+
+create policy "boards_select_own" on public.boards
+  for select using (auth.uid() = user_id);
+create policy "boards_insert_own" on public.boards
+  for insert with check (auth.uid() = user_id);
+create policy "boards_update_own" on public.boards
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "boards_delete_own" on public.boards
+  for delete using (auth.uid() = user_id);
 
 create policy "columns_select_own" on public.columns
   for select using (auth.uid() = user_id);
