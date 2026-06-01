@@ -1,11 +1,16 @@
 // Generates the PWA / Apple icons from an on-brand SVG.
 // Run with: node scripts/gen-icons.mjs
 import sharp from 'sharp'
+import { mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const out = join(__dirname, '..', 'public')
+
+// Ensure the output folder exists (it's empty in git, so it won't exist on a
+// fresh checkout such as Vercel's build environment).
+mkdirSync(out, { recursive: true })
 
 const svg = `
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
