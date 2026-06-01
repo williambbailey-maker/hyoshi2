@@ -98,10 +98,10 @@ export default function Auth() {
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={6}
-              placeholder="——————"
+              maxLength={10}
+              placeholder="Enter the code"
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
               disabled={status === 'verifying'}
               autoFocus
               className="otp-input"
