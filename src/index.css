@@ -194,6 +194,7 @@ header {
 /* ---- board as a vertical accordion of collapsible categories ---- */
 .board {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -201,6 +202,7 @@ header {
   overflow-x: hidden;
   padding: 6px 20px 24px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .board::-webkit-scrollbar {
   display: none;
