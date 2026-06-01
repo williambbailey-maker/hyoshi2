@@ -111,7 +111,7 @@ function FlowApp({ session }) {
     <div id="app">
       <header>
         <div className="brand">
-          <h1>Flow</h1>
+          <h1>Hyoshi</h1>
           <p>
             {loading
               ? 'Loading…'
@@ -168,7 +168,7 @@ function FlowApp({ session }) {
             onColumnMenu={openColumnMenu}
             onAddColumn={() => setColEditing({ mode: 'new' })}
           />
-          <div className="hint">Tap a card to edit · press &amp; hold to drag · swipe for more</div>
+          <div className="hint">Tap a list to expand · tap a card to edit · press &amp; hold to drag</div>
         </>
       )}
 

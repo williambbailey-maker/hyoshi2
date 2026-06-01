@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const STARTER_COLUMNS = [
-  { title: 'To Do', color: '#7c6cff', position: 0 },
-  { title: 'In Progress', color: '#ff7eb6', position: 1 },
-  { title: 'Done', color: '#5ad1cd', position: 2 },
+  { title: 'Today', color: '#c8f531', position: 0 },
+  { title: 'To Do', color: '#2a4cf4', position: 1 },
+  { title: 'In Progress', color: '#ff7e3d', position: 2 },
+  { title: 'Done', color: '#7c6cff', position: 3 },
 ]
 
 // Module-level lock: if two loads race on a brand-new account, they share the

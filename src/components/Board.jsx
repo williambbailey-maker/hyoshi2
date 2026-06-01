@@ -24,6 +24,7 @@ export default function Board({
   // Local ordering map { columnId: [taskId,...] } for smooth dragging.
   const [items, setItems] = useState({})
   const [activeId, setActiveId] = useState(null)
+  const [expanded, setExpanded] = useState(() => new Set())
   const draggingRef = useRef(false)
 
   // Rebuild local order from props whenever data changes (but not mid-drag).
@@ -37,10 +38,31 @@ export default function Board({
     setItems(map)
   }, [columns, tasks])
 
+  // Keep an expanded category in view: drop stale ids, and if nothing is open
+  // (e.g. after switching boards) open "Today" if present, else the first list.
+  useEffect(() => {
+    const ids = columns.map((c) => c.id)
+    setExpanded((prev) => {
+      const stillOpen = [...prev].filter((id) => ids.includes(id))
+      if (stillOpen.length === 0 && ids.length) {
+        const ordered = [...columns].sort((a, b) => a.position - b.position)
+        const today = ordered.find((c) => /today/i.test(c.title))
+        return new Set([(today || ordered[0]).id])
+      }
+      return new Set(stillOpen)
+    })
+  }, [columns])
+
   const taskMap = Object.fromEntries(tasks.map((t) => [t.id, t]))
 
-  // Long-press to drag on touch (so vertical/horizontal scroll still works);
-  // small movement to drag with a mouse.
+  const toggle = (id) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
+  // Long-press to drag on touch (so the page still scrolls); small move on mouse.
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -66,9 +88,7 @@ export default function Board({
     setItems((prev) => {
       const activeItems = prev[activeContainer]
       const overItems = prev[overContainer]
-      const activeIndex = activeItems.indexOf(active.id)
 
-      // Insert before the card being hovered, or at the end of an empty column.
       let newIndex
       if (over.id in prev) {
         newIndex = overItems.length
@@ -135,13 +155,15 @@ export default function Board({
             column={col}
             taskIds={items[col.id] || []}
             taskMap={taskMap}
+            expanded={expanded.has(col.id)}
+            onToggle={toggle}
             onAddTask={onAddTask}
             onCardClick={onCardClick}
             onMenu={onColumnMenu}
           />
         ))}
-        <button className="add-col" onClick={onAddColumn} aria-label="Add list">
-          +
+        <button className="add-col" onClick={onAddColumn}>
+          + Add list
         </button>
       </div>
 

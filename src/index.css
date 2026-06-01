@@ -34,6 +34,7 @@ body {
   height: 100%;
   overflow: hidden;
   font-family: 'Outfit', -apple-system, sans-serif;
+  font-size: 18px;
   color: var(--on-blue);
   background: var(--blue);
 }
@@ -76,7 +77,7 @@ header {
   color: var(--on-blue);
 }
 .brand p {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--on-blue-dim);
   margin-top: 5px;
   font-weight: 500;
@@ -94,7 +95,7 @@ header {
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 17px;
   border: none;
   color: var(--blue);
   cursor: pointer;
@@ -116,7 +117,7 @@ header {
   background: transparent;
   color: var(--on-blue-dim);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   padding: 8px 16px;
   border-radius: 18px;
@@ -148,7 +149,7 @@ header {
   border: none;
   color: var(--on-blue);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   padding: 9px 15px;
   border-radius: 20px;
@@ -171,7 +172,7 @@ header {
 }
 .board-pill .bedit {
   margin-left: 2px;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1;
   opacity: 0.7;
 }
@@ -182,7 +183,7 @@ header {
   border: none;
   background: var(--pill);
   color: var(--on-blue);
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   transition: all 0.18s;
 }
@@ -190,15 +191,15 @@ header {
   transform: scale(0.96);
 }
 
-/* horizontal scroll of columns */
+/* ---- board as a vertical accordion of collapsible categories ---- */
 .board {
   flex: 1;
   display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 6px 20px 20px;
-  scroll-snap-type: x mandatory;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 20px 24px;
   -webkit-overflow-scrolling: touch;
 }
 .board::-webkit-scrollbar {
@@ -206,21 +207,25 @@ header {
 }
 
 .column {
-  flex: 0 0 84%;
-  max-width: 340px;
-  scroll-snap-align: center;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   overflow: hidden;
+  transition: background 0.18s;
+}
+.column.over {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .col-head {
-  padding: 16px 18px 10px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  user-select: none;
 }
 .dot {
   width: 10px;
@@ -235,7 +240,7 @@ header {
 }
 .count {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--on-blue);
   background: var(--pill);
@@ -246,7 +251,7 @@ header {
   border: none;
   background: transparent;
   color: var(--on-blue-dim);
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
   padding: 2px 4px;
   cursor: pointer;
@@ -254,21 +259,31 @@ header {
 .col-menu:active {
   color: var(--on-blue);
 }
+.chev {
+  font-size: 14px;
+  color: var(--on-blue-dim);
+  transition: transform 0.2s ease;
+}
+.chev.open {
+  transform: rotate(180deg);
+}
 
 .cards {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 12px 12px;
+  padding: 0 12px 6px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 60px;
-}
-.cards::-webkit-scrollbar {
-  width: 0;
+  min-height: 8px;
 }
 .cards.drop-active {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+}
+.cards-empty {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-blue-faint);
+  padding: 10px 0;
 }
 
 /* white cards on the colour field */
@@ -306,7 +321,7 @@ header {
 }
 .card .tag {
   display: inline-block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding: 3px 11px;
   border-radius: 20px;
@@ -326,7 +341,7 @@ header {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--muted);
 }
@@ -341,14 +356,14 @@ header {
 }
 
 .add-card {
-  margin: 2px 12px 14px;
+  margin: 4px 12px 14px;
   padding: 12px;
   border-radius: 16px;
   background: transparent;
   border: 1.5px dashed rgba(255, 255, 255, 0.32);
   color: var(--on-blue);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s;
@@ -358,27 +373,28 @@ header {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* add-column tile */
+/* add-list button (full width) */
 .add-col {
-  flex: 0 0 64px;
-  scroll-snap-align: end;
+  width: 100%;
   border-radius: var(--radius);
   border: 1.5px dashed rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.08);
   color: var(--on-blue);
-  font-size: 26px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 16px;
   cursor: pointer;
-  display: grid;
-  place-items: center;
   transition: all 0.18s;
 }
 .add-col:active {
-  transform: scale(0.97);
+  transform: scale(0.99);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .hint {
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--on-blue-faint);
   padding: 0 22px 8px;
@@ -431,7 +447,7 @@ header {
 }
 .sheet label {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -448,7 +464,7 @@ header {
   padding: 13px 15px;
   color: var(--ink);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   outline: none;
 }
@@ -477,7 +493,7 @@ header {
   border-radius: 16px;
   border: none;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.14s, opacity 0.14s;
@@ -556,7 +572,7 @@ header {
 }
 .auth-card p.tag {
   color: var(--muted);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   margin: 6px 0 26px;
 }
@@ -568,7 +584,7 @@ header {
   padding: 15px 16px;
   color: var(--ink);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   outline: none;
   margin-bottom: 14px;
@@ -580,7 +596,7 @@ header {
 }
 .auth-card input.otp-input {
   text-align: center;
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 700;
   letter-spacing: 10px;
   padding-left: 26px;
@@ -595,7 +611,7 @@ header {
   border: none;
   color: var(--blue);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   padding: 4px;
@@ -604,7 +620,7 @@ header {
   opacity: 0.5;
 }
 .auth-msg {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   margin-top: 16px;
   line-height: 1.5;
@@ -617,7 +633,7 @@ header {
 }
 .account-email {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -677,7 +693,7 @@ header {
   border: none;
   background: var(--white);
   color: var(--blue);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -700,7 +716,7 @@ header {
   flex: 0 0 var(--cal-gutter);
 }
 .all-day-label {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--on-blue-faint);
   display: flex;
@@ -718,7 +734,7 @@ header {
   padding: 4px 0;
 }
 .day-head .dow {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--on-blue-dim);
   text-transform: uppercase;
@@ -750,7 +766,7 @@ header {
   min-width: 0;
 }
 .allday-pill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding: 4px 9px;
   border-radius: 9px;
@@ -778,7 +794,7 @@ header {
   flex: 0 0 var(--cal-gutter);
 }
 .hour-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--on-blue-faint);
   text-align: right;
@@ -804,12 +820,12 @@ header {
   box-shadow: 0 4px 12px rgba(8, 16, 70, 0.18);
 }
 .event-block .ev-time {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
 }
 .event-block .ev-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
   color: var(--ink);
@@ -818,7 +834,7 @@ header {
   text-overflow: ellipsis;
 }
 .event-block .ev-loc {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--muted);
   white-space: nowrap;
@@ -845,7 +861,7 @@ header {
 }
 .cal-foot {
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--on-blue-faint);
   padding: 6px 22px calc(6px + env(safe-area-inset-bottom));

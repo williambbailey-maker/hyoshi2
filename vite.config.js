@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Flow',
-        short_name: 'Flow',
+        name: 'Hyoshi',
+        short_name: 'Hyoshi',
         description: 'A personal task board & scheduler.',
         theme_color: '#2a4cf4',
         background_color: '#2a4cf4',

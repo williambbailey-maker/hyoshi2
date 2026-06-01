@@ -69,7 +69,7 @@ export default function Auth() {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="logo">Flow</div>
+        <div className="logo">Hyoshi</div>
         <p className="tag">Your tasks, in sync everywhere.</p>
 
         {step === 'email' ? (
