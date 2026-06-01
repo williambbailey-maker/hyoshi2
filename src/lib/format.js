@@ -1,12 +1,12 @@
-// Priority tag styling, matching the prototype's palette.
+// Priority tag styling — bold solid pills (AirCheck-style palette).
 export const PRIORITIES = {
-  low: { label: 'Low', bg: 'rgba(90,209,205,0.18)', fg: '#7fe6e2' },
-  med: { label: 'Medium', bg: 'rgba(124,108,255,0.20)', fg: '#b3a8ff' },
-  high: { label: 'High', bg: 'rgba(255,126,182,0.20)', fg: '#ffa8cd' },
+  low: { label: 'Low', bg: '#c8f531', fg: '#0b0b0f' },
+  med: { label: 'Medium', bg: '#2a4cf4', fg: '#ffffff' },
+  high: { label: 'High', bg: '#fb2c36', fg: '#ffffff' },
 }
 
-// Default colours offered when creating / editing a column.
-export const COLUMN_COLORS = ['#7c6cff', '#ff7eb6', '#5ad1cd', '#f7b955', '#9d8cff', '#8d8597']
+// Default colours offered when creating / editing a board or column.
+export const COLUMN_COLORS = ['#2a4cf4', '#fb2c36', '#c8f531', '#0b0b0f', '#ff7e3d', '#7c6cff']
 
 function startOfDay(d) {
   const x = new Date(d)

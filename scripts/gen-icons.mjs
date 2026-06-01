@@ -14,29 +14,10 @@ mkdirSync(out, { recursive: true })
 
 const svg = `
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#15123a"/>
-      <stop offset="1" stop-color="#07060f"/>
-    </linearGradient>
-    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7c6cff"/>
-      <stop offset="0.5" stop-color="#ff7eb6"/>
-      <stop offset="1" stop-color="#5ad1cd"/>
-    </linearGradient>
-    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="38"/>
-    </filter>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <g filter="url(#soft)" opacity="0.55">
-    <circle cx="120" cy="110" r="150" fill="#7c6cff"/>
-    <circle cx="410" cy="140" r="140" fill="#ff7eb6"/>
-    <circle cx="300" cy="470" r="150" fill="#5ad1cd"/>
-  </g>
-  <g fill="none" stroke="url(#wave)" stroke-linecap="round">
-    <path d="M96 196 C 180 126, 250 266, 340 196 S 470 126, 470 196" stroke-width="36" opacity="0.95"/>
-    <path d="M96 316 C 180 246, 250 386, 340 316 S 470 246, 470 316" stroke-width="36" opacity="0.7"/>
+  <rect width="512" height="512" fill="#2a4cf4"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M88 188 C 176 112, 256 268, 344 188 S 470 112, 470 188" stroke="#c8f531" stroke-width="40"/>
+    <path d="M88 322 C 176 246, 256 402, 344 322 S 470 246, 470 322" stroke="#ffffff" stroke-width="40"/>
   </g>
 </svg>`
 

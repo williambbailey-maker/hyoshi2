@@ -64,7 +64,7 @@ function FlowApp({ session }) {
     reorderTasks,
   } = useFlowData(userId)
 
-  const [view, setView] = useState('board') // 'board' | 'schedule'
+  const [view, setView] = useState('schedule') // 'board' | 'schedule' (open on calendar)
   const [taskEditing, setTaskEditing] = useState(null)
   const [colEditing, setColEditing] = useState(null)
   const [boardEditing, setBoardEditing] = useState(null)

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 const START_HOUR = 6
 const END_HOUR = 24
 const HOUR_PX = 58
-const PALETTE = ['#7c6cff', '#ff7eb6', '#5ad1cd', '#f7b955', '#9d8cff', '#ff9e7d']
+const PALETTE = ['#2a4cf4', '#fb2c36', '#ff7e3d', '#7c6cff', '#0d9488', '#d6258f']
 
 const pad = (n) => String(n).padStart(2, '0')
 const startOfDay = (d) => {
