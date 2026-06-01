@@ -578,6 +578,31 @@ header {
   border-color: var(--blue);
   background: #fff;
 }
+.auth-card input.otp-input {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 10px;
+  padding-left: 26px;
+}
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.linkbtn {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+}
+.linkbtn:disabled {
+  opacity: 0.5;
+}
 .auth-msg {
   font-size: 13px;
   font-weight: 500;

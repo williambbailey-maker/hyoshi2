@@ -15,6 +15,9 @@ export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    // We use 6-digit email OTP codes (verifyOtp), not link redirects, so the
+    // session is created in-app. This keeps login working inside the installed
+    // iPhone PWA, which has separate storage from Safari.
+    detectSessionInUrl: false,
   },
 })
