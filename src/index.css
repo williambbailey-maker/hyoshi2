@@ -210,6 +210,7 @@ header {
 
 .column {
   width: 100%;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.12);
@@ -378,6 +379,7 @@ header {
 /* add-list button (full width) */
 .add-col {
   width: 100%;
+  flex: 0 0 auto;
   border-radius: var(--radius);
   border: 1.5px dashed rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.08);
