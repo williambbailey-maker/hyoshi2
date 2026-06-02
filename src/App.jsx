@@ -158,18 +158,15 @@ function FlowApp({ session }) {
           <div className="spinner" />
         </div>
       ) : (
-        <>
-          <Board
-            columns={visibleColumns}
-            tasks={visibleTasks}
-            onReorder={reorderTasks}
-            onAddTask={(columnId) => setTaskEditing({ mode: 'new', columnId })}
-            onCardClick={(task) => setTaskEditing({ mode: 'edit', task })}
-            onColumnMenu={openColumnMenu}
-            onAddColumn={() => setColEditing({ mode: 'new' })}
-          />
-          <div className="hint">Tap a list to expand · tap a card to edit · press &amp; hold to drag</div>
-        </>
+        <Board
+          columns={visibleColumns}
+          tasks={visibleTasks}
+          onReorder={reorderTasks}
+          onAddTask={(columnId) => setTaskEditing({ mode: 'new', columnId })}
+          onCardClick={(task) => setTaskEditing({ mode: 'edit', task })}
+          onColumnMenu={openColumnMenu}
+          onAddColumn={() => setColEditing({ mode: 'new' })}
+        />
       )}
 
       <EditSheet
