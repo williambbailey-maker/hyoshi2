@@ -5,6 +5,7 @@ import Auth from './components/Auth'
 import Board from './components/Board'
 import BoardSwitcher from './components/BoardSwitcher'
 import ScheduleView from './components/ScheduleView'
+import CurateView from './components/CurateView'
 import EditSheet from './components/EditSheet'
 import ColumnSheet from './components/ColumnSheet'
 import BoardSheet from './components/BoardSheet'
@@ -113,28 +114,36 @@ function FlowApp({ session }) {
         <div className="brand">
           <h1>Hyoshi</h1>
           <p>
-            {loading
-              ? 'Loading…'
-              : `${visibleTasks.length} task${visibleTasks.length === 1 ? '' : 's'} · ${doneCount} done`}
+            {view === 'schedule'
+              ? 'Your calendar'
+              : view === 'curate'
+                ? 'Your notes'
+                : loading
+                  ? 'Loading…'
+                  : `${visibleTasks.length} task${visibleTasks.length === 1 ? '' : 's'} · ${doneCount} done`}
           </p>
         </div>
-        <div className="header-right">
-          <div className="segmented">
-            <button className={view === 'board' ? 'active' : ''} onClick={() => setView('board')}>
-              Board
-            </button>
-            <button
-              className={view === 'schedule' ? 'active' : ''}
-              onClick={() => setView('schedule')}
-            >
-              Schedule
-            </button>
-          </div>
-          <button className="avatar" onClick={() => setAccountOpen(true)}>
-            {initials}
+        <button className="avatar" onClick={() => setAccountOpen(true)}>
+          {initials}
+        </button>
+      </header>
+
+      <div className="viewbar">
+        <div className="segmented">
+          <button className={view === 'board' ? 'active' : ''} onClick={() => setView('board')}>
+            Board
+          </button>
+          <button
+            className={view === 'schedule' ? 'active' : ''}
+            onClick={() => setView('schedule')}
+          >
+            Schedule
+          </button>
+          <button className={view === 'curate' ? 'active' : ''} onClick={() => setView('curate')}>
+            Curate
           </button>
         </div>
-      </header>
+      </div>
 
       {view === 'board' && !loading && !error && boards.length > 0 && (
         <BoardSwitcher
@@ -148,6 +157,8 @@ function FlowApp({ session }) {
 
       {view === 'schedule' ? (
         <ScheduleView />
+      ) : view === 'curate' ? (
+        <CurateView userId={userId} />
       ) : error ? (
         <div className="center-state">
           <div className="big">Couldn’t load your boards</div>

@@ -106,9 +106,14 @@ header {
   transform: scale(0.94);
 }
 
-/* segmented Board / Schedule toggle */
+/* view switcher bar (Board / Schedule / Curate) */
+.viewbar {
+  padding: 0 20px 12px;
+}
+
+/* segmented Board / Schedule / Curate toggle */
 .segmented {
-  display: flex;
+  display: inline-flex;
   background: var(--pill);
   border-radius: 22px;
   padding: 4px;
@@ -403,6 +408,74 @@ header {
   font-weight: 500;
   color: var(--on-blue-faint);
   padding: 0 22px 8px;
+}
+
+/* ---- Curate module (notes) ---- */
+.curate {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 20px 24px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.curate::-webkit-scrollbar {
+  display: none;
+}
+.note {
+  flex: 0 0 auto;
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 6px 16px rgba(8, 16, 70, 0.12);
+  overflow: hidden;
+}
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.note-head h3 {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  word-break: break-word;
+}
+.note-menu {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.note-head .chev {
+  color: var(--muted);
+}
+.note-body {
+  padding: 0 16px 16px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #2c2d33;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.note-empty {
+  color: var(--muted);
+  font-style: italic;
+}
+.note-textarea {
+  min-height: 160px;
 }
 
 /* ---- modal / slide-up sheet (white) ---- */
