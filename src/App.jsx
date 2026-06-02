@@ -6,6 +6,7 @@ import Board from './components/Board'
 import BoardSwitcher from './components/BoardSwitcher'
 import ScheduleView from './components/ScheduleView'
 import CurateView from './components/CurateView'
+import BriefingView from './components/BriefingView'
 import EditSheet from './components/EditSheet'
 import ColumnSheet from './components/ColumnSheet'
 import BoardSheet from './components/BoardSheet'
@@ -131,6 +132,12 @@ function FlowApp({ session }) {
           <button className={view === 'curate' ? 'active' : ''} onClick={() => setView('curate')}>
             Curate
           </button>
+          <button
+            className={view === 'briefing' ? 'active' : ''}
+            onClick={() => setView('briefing')}
+          >
+            Briefing
+          </button>
         </div>
       </div>
 
@@ -148,6 +155,15 @@ function FlowApp({ session }) {
         <ScheduleView />
       ) : view === 'curate' ? (
         <CurateView userId={userId} />
+      ) : view === 'briefing' ? (
+        <BriefingView
+          tasks={tasks}
+          columns={columns}
+          boards={boards}
+          completeTask={completeTask}
+          reopenTask={reopenTask}
+          email={email}
+        />
       ) : error ? (
         <div className="center-state">
           <div className="big">Couldn’t load your boards</div>
