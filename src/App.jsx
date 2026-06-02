@@ -62,6 +62,8 @@ function FlowApp({ session }) {
     addTask,
     updateTask,
     deleteTask,
+    completeTask,
+    reopenTask,
     reorderTasks,
   } = useFlowData(userId)
 
@@ -173,6 +175,8 @@ function FlowApp({ session }) {
         onCreate={addTask}
         onUpdate={updateTask}
         onDelete={deleteTask}
+        onComplete={completeTask}
+        onReopen={reopenTask}
       />
 
       <ColumnSheet

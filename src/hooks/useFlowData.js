@@ -5,8 +5,10 @@ const STARTER_COLUMNS = [
   { title: 'Today', color: '#c8f531', position: 0 },
   { title: 'To Do', color: '#2a4cf4', position: 1 },
   { title: 'In Progress', color: '#ff7e3d', position: 2 },
-  { title: 'Done', color: '#7c6cff', position: 3 },
+  { title: 'Complete', color: '#0d9488', position: 3 },
 ]
+
+const isCompleteCol = (title) => /^\s*complete\s*$/i.test(title || '')
 
 // Module-level lock: if two loads race on a brand-new account, they share the
 // same seeding promise instead of both creating a default board/columns.
@@ -246,18 +248,118 @@ export function useFlowData(userId) {
     await supabase.from('tasks').delete().eq('id', id)
   }, [])
 
-  // Persist a full re-ordering produced by drag & drop.
+  // Mark a task complete: move it to the board's "Complete" bucket, stamp the
+  // time + original category, and keep its notes. Newest completion goes on top.
+  const completeTask = useCallback(
+    async (taskId) => {
+      const task = tasks.find((t) => t.id === taskId)
+      if (!task) return
+      const fromCol = columns.find((c) => c.id === task.column_id)
+      const boardId = fromCol?.board_id
+      let completeCol = columns.find((c) => c.board_id === boardId && isCompleteCol(c.title))
+      if (!completeCol) {
+        const position = columns.filter((c) => c.board_id === boardId).length
+        const { data } = await supabase
+          .from('columns')
+          .insert({ title: 'Complete', color: '#0d9488', position, board_id: boardId, user_id: userId })
+          .select()
+          .single()
+        if (!data) return
+        completeCol = data
+        setColumns((prev) => [...prev, data])
+      }
+      const completedAt = new Date().toISOString()
+      const completedFrom = fromCol?.title || null
+      const others = tasks
+        .filter((t) => t.column_id === completeCol.id && t.id !== taskId)
+        .sort((a, b) => a.position - b.position)
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === taskId)
+            return {
+              ...t,
+              column_id: completeCol.id,
+              completed_at: completedAt,
+              completed_from: completedFrom,
+              position: 0,
+            }
+          const idx = others.findIndex((o) => o.id === t.id)
+          return idx >= 0 ? { ...t, position: idx + 1 } : t
+        }),
+      )
+      await supabase
+        .from('tasks')
+        .update({
+          column_id: completeCol.id,
+          completed_at: completedAt,
+          completed_from: completedFrom,
+          position: 0,
+        })
+        .eq('id', taskId)
+      await Promise.all(
+        others.map((o, i) => supabase.from('tasks').update({ position: i + 1 }).eq('id', o.id)),
+      )
+    },
+    [tasks, columns, userId],
+  )
+
+  // Reopen a completed task: clear completion and send it back to its original
+  // category (if it still exists), else the first non-complete list on the board.
+  const reopenTask = useCallback(
+    async (taskId) => {
+      const task = tasks.find((t) => t.id === taskId)
+      if (!task) return
+      const boardId = columns.find((c) => c.id === task.column_id)?.board_id
+      const boardCols = columns
+        .filter((c) => c.board_id === boardId)
+        .sort((a, b) => a.position - b.position)
+      const target =
+        boardCols.find((c) => !isCompleteCol(c.title) && c.title === task.completed_from) ||
+        boardCols.find((c) => !isCompleteCol(c.title))
+      if (!target) return
+      const position = tasks.filter((t) => t.column_id === target.id).length
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, column_id: target.id, completed_at: null, completed_from: null, position }
+            : t,
+        ),
+      )
+      await supabase
+        .from('tasks')
+        .update({ column_id: target.id, completed_at: null, completed_from: null, position })
+        .eq('id', taskId)
+    },
+    [tasks, columns],
+  )
+
+  // Persist a full re-ordering produced by drag & drop. Also stamps/clears
+  // completion when a card is dragged into or out of the "Complete" bucket.
   // itemsMap: { [columnId]: [taskId, taskId, ...] }
   const reorderTasks = useCallback(
     async (itemsMap) => {
       const current = new Map(tasks.map((t) => [t.id, t]))
+      const colById = new Map(columns.map((c) => [c.id, c]))
       const updates = []
       for (const [columnId, ids] of Object.entries(itemsMap)) {
         ids.forEach((taskId, position) => {
           const t = current.get(taskId)
           if (!t) return
-          if (t.column_id !== columnId || t.position !== position) {
-            updates.push({ id: taskId, column_id: columnId, position })
+          const movedCol = t.column_id !== columnId
+          if (movedCol || t.position !== position) {
+            const u = { id: taskId, column_id: columnId, position }
+            if (movedCol) {
+              const toComplete = isCompleteCol(colById.get(columnId)?.title)
+              const fromComplete = isCompleteCol(colById.get(t.column_id)?.title)
+              if (toComplete && !fromComplete) {
+                u.completed_at = t.completed_at || new Date().toISOString()
+                u.completed_from = colById.get(t.column_id)?.title || t.completed_from || null
+              } else if (fromComplete && !toComplete) {
+                u.completed_at = null
+                u.completed_from = null
+              }
+            }
+            updates.push(u)
           }
         })
       }
@@ -265,15 +367,15 @@ export function useFlowData(userId) {
       const patch = new Map(updates.map((u) => [u.id, u]))
       setTasks((prev) => prev.map((t) => (patch.has(t.id) ? { ...t, ...patch.get(t.id) } : t)))
       await Promise.all(
-        updates.map((u) =>
-          supabase
-            .from('tasks')
-            .update({ column_id: u.column_id, position: u.position })
-            .eq('id', u.id),
-        ),
+        updates.map((u) => {
+          const fields = { column_id: u.column_id, position: u.position }
+          if ('completed_at' in u) fields.completed_at = u.completed_at
+          if ('completed_from' in u) fields.completed_from = u.completed_from
+          return supabase.from('tasks').update(fields).eq('id', u.id)
+        }),
       )
     },
-    [tasks],
+    [tasks, columns],
   )
 
   return {
@@ -296,6 +398,8 @@ export function useFlowData(userId) {
     addTask,
     updateTask,
     deleteTask,
+    completeTask,
+    reopenTask,
     reorderTasks,
   }
 }

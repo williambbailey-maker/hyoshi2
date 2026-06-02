@@ -35,6 +35,8 @@ create table if not exists public.tasks (
   priority text not null default 'med' check (priority in ('low','med','high')),
   due_date date,
   position integer not null,
+  completed_at timestamptz,
+  completed_from text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

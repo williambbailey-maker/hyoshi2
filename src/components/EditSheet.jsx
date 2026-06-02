@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react'
 import Sheet from './Sheet'
+import { formatCompleted } from '../lib/format'
 
 // Add / edit a task. `editing` is either:
 //   { mode: 'new', columnId }  or  { mode: 'edit', task }
-export default function EditSheet({ editing, onClose, onCreate, onUpdate, onDelete }) {
+export default function EditSheet({
+  editing,
+  onClose,
+  onCreate,
+  onUpdate,
+  onDelete,
+  onComplete,
+  onReopen,
+}) {
   const [title, setTitle] = useState('')
   const [priority, setPriority] = useState('med')
   const [dueDate, setDueDate] = useState('')
@@ -75,6 +84,38 @@ export default function EditSheet({ editing, onClose, onCreate, onUpdate, onDele
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Anything else…"
       />
+
+      {isEdit && editing.task.completed_at && (
+        <p className="completed-note">
+          ✓ Completed {formatCompleted(editing.task.completed_at)}
+          {editing.task.completed_from ? ` · was in ${editing.task.completed_from}` : ''}
+        </p>
+      )}
+
+      {isEdit &&
+        (editing.task.completed_at ? (
+          <button
+            className="btn ghost"
+            style={{ width: '100%', marginTop: 14 }}
+            onClick={() => {
+              onReopen(editing.task.id)
+              onClose()
+            }}
+          >
+            ↩ Reopen task
+          </button>
+        ) : (
+          <button
+            className="btn complete"
+            style={{ width: '100%', marginTop: 14 }}
+            onClick={() => {
+              onComplete(editing.task.id)
+              onClose()
+            }}
+          >
+            ✓ Mark complete
+          </button>
+        ))}
 
       <div className="sheet-actions">
         {isEdit ? (

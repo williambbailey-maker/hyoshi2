@@ -39,6 +39,12 @@ export function formatDue(dateStr) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+// Friendly label for a completion timestamp, e.g. "Jun 5".
+export function formatCompleted(iso) {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 export function isOverdue(dateStr) {
   const date = parseDue(dateStr)
   if (!date) return false

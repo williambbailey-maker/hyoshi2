@@ -1,16 +1,17 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { PRIORITIES, formatDue, isOverdue } from '../lib/format'
+import { PRIORITIES, formatDue, isOverdue, formatCompleted } from '../lib/format'
 
 // Presentational card — also used inside the DragOverlay.
 export function CardView({ task, className = '', style, dragRef, listeners, attributes, onClick }) {
   const tag = PRIORITIES[task.priority] || PRIORITIES.med
   const due = formatDue(task.due_date)
   const overdue = isOverdue(task.due_date) && task.due_date
+  const done = !!task.completed_at
   return (
     <div
       ref={dragRef}
-      className={`card ${className}`}
+      className={`card ${done ? 'done' : ''} ${className}`}
       style={style}
       onClick={onClick}
       {...attributes}
@@ -20,11 +21,21 @@ export function CardView({ task, className = '', style, dragRef, listeners, attr
         {tag.label}
       </span>
       <h3>{task.title}</h3>
-      {(due || task.notes) && (
+      {done ? (
         <div className="meta">
-          {due && <span className={overdue ? 'overdue' : ''}>◷ {due}</span>}
+          <span className="done-meta">
+            ✓ {formatCompleted(task.completed_at)}
+            {task.completed_from ? ` · ${task.completed_from}` : ''}
+          </span>
           {task.notes && <span>✎</span>}
         </div>
+      ) : (
+        (due || task.notes) && (
+          <div className="meta">
+            {due && <span className={overdue ? 'overdue' : ''}>◷ {due}</span>}
+            {task.notes && <span>✎</span>}
+          </div>
+        )
       )}
     </div>
   )

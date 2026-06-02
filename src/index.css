@@ -596,6 +596,29 @@ header {
   background: #ffe6e7;
   color: var(--red);
 }
+.btn.complete {
+  background: #0d9488;
+  color: #fff;
+}
+
+/* completed task styling */
+.card.done {
+  opacity: 0.9;
+}
+.card.done h3 {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.card .meta .done-meta {
+  color: #0d9488;
+  font-weight: 600;
+}
+.completed-note {
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d9488;
+}
 
 /* colour swatches */
 .swatches {
