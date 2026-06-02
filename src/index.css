@@ -109,6 +109,7 @@ header {
 /* view switcher bar (Board / Schedule / Curate) */
 .viewbar {
   padding: 0 20px 12px;
+  text-align: center;
 }
 
 /* segmented Board / Schedule / Curate toggle */

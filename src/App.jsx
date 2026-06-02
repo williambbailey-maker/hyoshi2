@@ -82,11 +82,7 @@ function FlowApp({ session }) {
   }, [tasks, visibleColumns])
 
   const email = session.user.email || ''
-  const initials = email.slice(0, 2).toUpperCase()
-  const doneCount = useMemo(() => {
-    const doneCol = visibleColumns.find((c) => /done/i.test(c.title))
-    return doneCol ? visibleTasks.filter((t) => t.column_id === doneCol.id).length : 0
-  }, [visibleColumns, visibleTasks])
+  const initial = (email.charAt(0) || 'W').toUpperCase()
 
   function openColumnMenu(column) {
     const ordered = visibleColumns.slice().sort((a, b) => a.position - b.position)
@@ -113,18 +109,9 @@ function FlowApp({ session }) {
       <header>
         <div className="brand">
           <h1>Hyoshi</h1>
-          <p>
-            {view === 'schedule'
-              ? 'Your calendar'
-              : view === 'curate'
-                ? 'Your notes'
-                : loading
-                  ? 'Loading…'
-                  : `${visibleTasks.length} task${visibleTasks.length === 1 ? '' : 's'} · ${doneCount} done`}
-          </p>
         </div>
         <button className="avatar" onClick={() => setAccountOpen(true)}>
-          {initials}
+          {initial}
         </button>
       </header>
 
