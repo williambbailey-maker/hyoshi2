@@ -162,7 +162,6 @@ function FlowApp({ session }) {
           boards={boards}
           completeTask={completeTask}
           reopenTask={reopenTask}
-          email={email}
         />
       ) : error ? (
         <div className="center-state">

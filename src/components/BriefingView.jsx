@@ -22,10 +22,9 @@ function greeting(h) {
   if (h < 18) return 'Good afternoon'
   return 'Good evening'
 }
-function deriveName(email) {
-  const local = (email || '').split('@')[0].replace(/[._-].*$/, '').replace(/[^a-zA-Z]/g, '')
-  if (!local) return 'there'
-  return local.charAt(0).toUpperCase() + local.slice(1)
+function displayName() {
+  const stored = typeof localStorage !== 'undefined' && localStorage.getItem('hyoshi.displayName')
+  return stored || 'William'
 }
 function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
@@ -40,7 +39,7 @@ function classifyBlock(title = '') {
   return { type: 'fixed', color: '#0d9488' }
 }
 
-export default function BriefingView({ tasks, columns, boards, completeTask, reopenTask, email }) {
+export default function BriefingView({ tasks, columns, boards, completeTask, reopenTask }) {
   const today = useMemo(() => startOfDay(new Date()), [])
   const dayKey = ymd(today)
 
@@ -194,7 +193,7 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
     : `${busyMins >= 360 ? 'Fully blocked' : busyMins >= 180 ? 'Busy' : 'Some open time'} · ${anchor.title} ${fmtTime(anchor.start)} is your main fixed block`
 
   const now = new Date()
-  const userName = deriveName(email)
+  const userName = displayName()
   const fullDate = today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
 
   // progress ring geometry
