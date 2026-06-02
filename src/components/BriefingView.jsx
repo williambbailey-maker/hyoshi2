@@ -17,6 +17,9 @@ const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 const PRI_RANK = { high: 0, med: 1, low: 2 }
 const PRI_TAG = { high: 'P1', med: 'P2', low: 'P3' }
 
+// Consistent daily reminders — shown every day, checked state resets each day.
+const RITUALS = ['Eat oatmeal', 'Stretch / massage gun', 'Water garden', 'Meditate', 'Movement']
+
 function greeting(h) {
   if (h < 12) return 'Good morning'
   if (h < 18) return 'Good afternoon'
@@ -109,7 +112,7 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
   const done = inScope.filter((t) => t._done).length
 
   // ---- collapsible sections (task sections start collapsed; schedule open) ----
-  const [collapsed, setCollapsed] = useState({ hot: true, quick: true, rolled: true })
+  const [collapsed, setCollapsed] = useState({ hot: true, quick: true, rolled: true, rituals: true })
   const toggle = (k) => setCollapsed((p) => ({ ...p, [k]: !p[k] }))
 
   // ---- section refs for stat-tile jump + flash ----
@@ -146,6 +149,26 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
     setPriorities(values)
     if (lock !== undefined) setLocked(lock)
     localStorage.setItem(storeKey, JSON.stringify({ values, locked: lock ?? locked }))
+  }
+
+  // ---- daily rituals checklist (resets per day) ----
+  const ritualKey = `hyoshi.rituals.${dayKey}`
+  const [ritualsDone, setRitualsDone] = useState(() => new Set())
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ritualKey)
+      setRitualsDone(new Set(raw ? JSON.parse(raw) : []))
+    } catch {
+      setRitualsDone(new Set())
+    }
+  }, [ritualKey])
+  function toggleRitual(i) {
+    setRitualsDone((prev) => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      localStorage.setItem(ritualKey, JSON.stringify([...next]))
+      return next
+    })
   }
 
   // ---- hand-off ----
@@ -410,6 +433,39 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
         </div>
         <div className="bf-rise" style={{ animationDelay: '360ms' }}>
           <Section id="rolled" title="Rolled Over" items={buckets.rolled} accent="#ff7e3d" />
+        </div>
+
+        {/* daily rituals */}
+        <div className="bf-section bf-rise" style={{ animationDelay: '420ms' }}>
+          <button className="bf-section-head" onClick={() => toggle('rituals')}>
+            <span className="bf-dot" style={{ background: '#7c6cff' }} />
+            <h3>Rituals</h3>
+            <span className="bf-count">
+              {ritualsDone.size}/{RITUALS.length}
+            </span>
+            <span className={`chev ${collapsed.rituals ? '' : 'open'}`}>▾</span>
+          </button>
+          {!collapsed.rituals && (
+            <div className="bf-section-body">
+              {RITUALS.map((r, i) => {
+                const dn = ritualsDone.has(i)
+                return (
+                  <div className={`bf-row ${dn ? 'done' : ''}`} key={i}>
+                    <div className="bf-row-main">
+                      <button
+                        className={`bf-check ${dn ? 'checked' : ''}`}
+                        onClick={() => toggleRitual(i)}
+                        aria-label={dn ? 'Undo' : 'Done'}
+                      >
+                        {dn ? '✓' : ''}
+                      </button>
+                      <span className="bf-row-title">{r}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* priorities ritual */}
