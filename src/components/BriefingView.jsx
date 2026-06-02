@@ -78,16 +78,17 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
   function bucketOf(t) {
     const due = t.due_date ? startOfDay(new Date(t.due_date + 'T00:00:00')) : null
     if (due && due.getTime() < today.getTime()) return 'rolled'
-    if (due && due.getTime() > today.getTime()) return 'deep'
+    if (due && due.getTime() > today.getTime()) return null // future-dated → not today
     return t.priority === 'low' ? 'quick' : 'hot'
   }
 
   const buckets = useMemo(() => {
-    const out = { hot: [], quick: [], rolled: [], deep: [] }
+    const out = { hot: [], quick: [], rolled: [] }
     for (const t of tasks) {
       const completedToday = isCompletedToday(t)
       if (t.completed_at && !completedToday) continue // completed on a prior day → drop
       const key = bucketOf(t)
+      if (!key) continue
       out[key].push({ ...t, _done: completedToday })
     }
     // open first, completed-today last; within each by priority then title
@@ -103,12 +104,12 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
   }, [tasks, today])
 
   // progress ring: done = completed-today in scope, total = everything in scope
-  const inScope = [...buckets.hot, ...buckets.quick, ...buckets.rolled, ...buckets.deep]
+  const inScope = [...buckets.hot, ...buckets.quick, ...buckets.rolled]
   const total = inScope.length
   const done = inScope.filter((t) => t._done).length
 
-  // ---- collapsible sections ----
-  const [collapsed, setCollapsed] = useState({})
+  // ---- collapsible sections (task sections start collapsed; schedule open) ----
+  const [collapsed, setCollapsed] = useState({ hot: true, quick: true, rolled: true })
   const toggle = (k) => setCollapsed((p) => ({ ...p, [k]: !p[k] }))
 
   // ---- section refs for stat-tile jump + flash ----
@@ -409,9 +410,6 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
         </div>
         <div className="bf-rise" style={{ animationDelay: '360ms' }}>
           <Section id="rolled" title="Rolled Over" items={buckets.rolled} accent="#ff7e3d" />
-        </div>
-        <div className="bf-rise" style={{ animationDelay: '420ms' }}>
-          <Section id="deep" title="Deep / Setup" items={buckets.deep} accent="#7c6cff" />
         </div>
 
         {/* priorities ritual */}
