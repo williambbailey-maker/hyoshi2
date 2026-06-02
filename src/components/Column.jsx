@@ -39,9 +39,11 @@ export default function Column({
         <>
           <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
             <div className={`cards ${isOver ? 'drop-active' : ''}`}>
-              {taskIds.map((id) => (
-                <Card key={id} task={taskMap[id]} onClick={() => onCardClick(taskMap[id])} />
-              ))}
+              {taskIds.map((id) =>
+                taskMap[id] ? (
+                  <Card key={id} task={taskMap[id]} onClick={() => onCardClick(taskMap[id])} />
+                ) : null,
+              )}
               {taskIds.length === 0 && <div className="cards-empty">No tasks yet</div>}
             </div>
           </SortableContext>
