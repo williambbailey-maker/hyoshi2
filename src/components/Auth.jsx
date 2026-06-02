@@ -98,10 +98,10 @@ export default function Auth() {
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={10}
+              maxLength={12}
               placeholder="Enter the code"
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 12))}
               disabled={status === 'verifying'}
               autoFocus
               className="otp-input"
@@ -110,7 +110,7 @@ export default function Auth() {
               type="submit"
               className="btn primary"
               style={{ width: '100%' }}
-              disabled={status === 'verifying' || code.length < 6}
+              disabled={status === 'verifying' || code.length < 4}
             >
               {status === 'verifying' ? 'Verifying…' : 'Verify & sign in'}
             </button>
