@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 // Google Calendar timeline (calendar only — no tasks here).
 const START_HOUR = 6
 const END_HOUR = 24
-const HOUR_PX = 58
+const HOUR_PX = 76
 const PALETTE = ['#2a4cf4', '#fb2c36', '#ff7e3d', '#7c6cff', '#0d9488', '#d6258f']
 
 const pad = (n) => String(n).padStart(2, '0')
