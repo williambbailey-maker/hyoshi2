@@ -85,19 +85,17 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
     return t.priority === 'low' ? 'quick' : 'hot'
   }
 
+  // open tasks only, bucketed for today
   const buckets = useMemo(() => {
     const out = { hot: [], quick: [], rolled: [] }
     for (const t of tasks) {
-      const completedToday = isCompletedToday(t)
-      if (t.completed_at && !completedToday) continue // completed on a prior day → drop
+      if (t.completed_at) continue // open only
       const key = bucketOf(t)
       if (!key) continue
-      out[key].push({ ...t, _done: completedToday })
+      out[key].push(t)
     }
-    // open first, completed-today last; within each by priority then title
     for (const k of Object.keys(out)) {
       out[k].sort((a, b) => {
-        if (a._done !== b._done) return a._done ? 1 : -1
         const pr = (PRI_RANK[a.priority] ?? 1) - (PRI_RANK[b.priority] ?? 1)
         return pr !== 0 ? pr : (a.title || '').localeCompare(b.title || '')
       })
@@ -106,13 +104,29 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, today])
 
-  // progress ring: done = completed-today in scope, total = everything in scope
-  const inScope = [...buckets.hot, ...buckets.quick, ...buckets.rolled]
-  const total = inScope.length
-  const done = inScope.filter((t) => t._done).length
+  // every task completed today (from anywhere), newest first
+  const completedToday = useMemo(
+    () =>
+      tasks
+        .filter(isCompletedToday)
+        .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tasks, today],
+  )
+
+  // progress ring: done = completed today, total = open shown + completed today
+  const openCount = buckets.hot.length + buckets.quick.length + buckets.rolled.length
+  const total = openCount + completedToday.length
+  const done = completedToday.length
 
   // ---- collapsible sections (task sections start collapsed; schedule open) ----
-  const [collapsed, setCollapsed] = useState({ hot: true, quick: true, rolled: true, rituals: true })
+  const [collapsed, setCollapsed] = useState({
+    hot: true,
+    quick: true,
+    rolled: true,
+    completed: true,
+    rituals: true,
+  })
   const toggle = (k) => setCollapsed((p) => ({ ...p, [k]: !p[k] }))
 
   // ---- section refs for stat-tile jump + flash ----
@@ -176,9 +190,9 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
   function handoff() {
     const lines = [
       `Here is my day (${today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}).`,
-      `Priorities (${total - done} open, ${done} done):`,
-      ...buckets.hot.filter((t) => !t._done).slice(0, 8).map((t) => `- [${PRI_TAG[t.priority]}] ${t.title}`),
-      buckets.rolled.length ? `Rolled over: ${buckets.rolled.filter((t) => !t._done).map((t) => t.title).join('; ')}` : '',
+      `Priorities (${openCount} open, ${done} done):`,
+      ...buckets.hot.slice(0, 8).map((t) => `- [${PRI_TAG[t.priority]}] ${t.title}`),
+      buckets.rolled.length ? `Rolled over: ${buckets.rolled.map((t) => t.title).join('; ')}` : '',
       `Please help me plan and run these today.`,
     ].filter(Boolean)
     const text = lines.join('\n')
@@ -207,7 +221,7 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
     .sort((a, b) => a._start - b._start)
   const allDay = events.filter((e) => e.allDay)
   const [openBlock, setOpenBlock] = useState(null)
-  const hotCandidates = buckets.hot.filter((t) => !t._done).slice(0, 3)
+  const hotCandidates = buckets.hot.slice(0, 3)
 
   // "shape of the day"
   const busyMins = timed.reduce((n, b) => n + b._mins, 0)
@@ -232,19 +246,19 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
   function TaskRow({ t }) {
     const col = colMap[t.column_id]
     const board = col ? boardMap[col.board_id] : null
-    const tag = PRIORITIES[t.priority] || PRIORITIES.med
-    const category = t._done ? t.completed_from : col?.title
-    const overdue = !t._done && t.due_date && new Date(t.due_date + 'T00:00:00') < today
+    const isDone = !!t.completed_at
+    const category = isDone ? t.completed_from : col?.title
+    const overdue = !isDone && t.due_date && new Date(t.due_date + 'T00:00:00') < today
     const open = openRow === t.id
     return (
-      <div className={`bf-row ${t._done ? 'done' : ''}`}>
+      <div className={`bf-row ${isDone ? 'done' : ''}`}>
         <div className="bf-row-main">
           <button
-            className={`bf-check ${t._done ? 'checked' : ''}`}
-            onClick={() => (t._done ? reopenTask(t.id) : completeTask(t.id))}
-            aria-label={t._done ? 'Reopen' : 'Complete'}
+            className={`bf-check ${isDone ? 'checked' : ''}`}
+            onClick={() => (isDone ? reopenTask(t.id) : completeTask(t.id))}
+            aria-label={isDone ? 'Reopen' : 'Complete'}
           >
-            {t._done ? '✓' : ''}
+            {isDone ? '✓' : ''}
           </button>
           <button className="bf-row-text" onClick={() => setOpenRow(open ? null : t.id)}>
             <span className="bf-row-title">{t.title}</span>
@@ -255,7 +269,7 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
               {board && <Tag kind="proj">#{board.title}</Tag>}
               {category && <Tag>{category}</Tag>}
               {overdue && <Tag kind="overdue">overdue</Tag>}
-              {t._done && <Tag kind="doneflag">✓ {formatCompleted(t.completed_at)}</Tag>}
+              {isDone && <Tag kind="doneflag">✓ {formatCompleted(t.completed_at)}</Tag>}
             </span>
           </button>
         </div>
@@ -433,6 +447,9 @@ export default function BriefingView({ tasks, columns, boards, completeTask, reo
         </div>
         <div className="bf-rise" style={{ animationDelay: '360ms' }}>
           <Section id="rolled" title="Rolled Over" items={buckets.rolled} accent="#ff7e3d" />
+        </div>
+        <div className="bf-rise" style={{ animationDelay: '400ms' }}>
+          <Section id="completed" title="Completed Today" items={completedToday} accent="#0d9488" />
         </div>
 
         {/* daily rituals */}
